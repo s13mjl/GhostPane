@@ -77,3 +77,6 @@ GhostPane/
 ## 许可证
 
 [MIT License](LICENSE)
+
+## 声明
+本项目由 AI 辅助开发。
