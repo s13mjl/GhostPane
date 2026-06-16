@@ -11,7 +11,7 @@
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType"
         UseLayoutRounding="True"
-        Icon="icon.ico">
+        Icon="pack://application:,,,/icon.ico">
 
     <Window.DataContext>
         <vm:MainViewModel/>
