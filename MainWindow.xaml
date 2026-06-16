@@ -1,0 +1,366 @@
+<Window x:Class="HideBar.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:HideBar.ViewModels"
+        xmlns:m="clr-namespace:HideBar.Models"
+        Title="GhostPane"
+        Width="1100" Height="680"
+        MinWidth="900" MinHeight="500"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource AppleBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True"
+        Icon="icon.ico">
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===== 顶部工具栏 ===== -->
+        <Border Grid.Row="0"
+                Background="{StaticResource AppleSurfaceBrush}"
+                BorderBrush="{StaticResource AppleBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Vertical">
+                    <TextBlock Text="HideBar"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,2"/>
+                    <TextBlock Text="管理、隐藏、收藏你的窗口"
+                               FontSize="12"
+                               Foreground="{StaticResource AppleTextSecondaryBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="刷新"
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource AppleButton}"
+                            Margin="0,0,8,0"/>
+                    <Button Content="全部隐藏"
+                            Command="{Binding HideAllCommand}"
+                            Style="{StaticResource AppleDangerButton}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== 搜索栏 ===== -->
+        <Border Grid.Row="0" Margin="0,86,0,0"
+                Background="{StaticResource AppleSurfaceBrush}"
+                BorderBrush="{StaticResource AppleBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Background="{StaticResource AppleSidebarBrush}"
+                        BorderBrush="{StaticResource AppleBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10,6"
+                        MaxWidth="400"
+                        HorizontalAlignment="Left">
+                    <Grid>
+                        <TextBlock Text="🔍  搜索窗口..."
+                                   Foreground="{StaticResource AppleTextSecondaryBrush}"
+                                   IsHitTestVisible="False"
+                                   VerticalAlignment="Center"
+                                   Margin="2,0"
+                                   Visibility="{Binding Text.IsEmpty, ElementName=SearchBox, Converter={StaticResource BoolToVis}}"/>
+                        <TextBox x:Name="SearchBox"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 FontSize="13"
+                                 Foreground="{StaticResource AppleTextPrimaryBrush}"
+                                 CaretBrush="{StaticResource AppleAccentBrush}"/>
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="可见" FontSize="12" Foreground="{StaticResource AppleTextSecondaryBrush}" VerticalAlignment="Center"/>
+                    <Border Background="{StaticResource AppleAccentBrush}" CornerRadius="10" Padding="8,2" Margin="6,0,12,0">
+                        <TextBlock Text="{Binding VisibleCount}" FontSize="11" Foreground="White" FontWeight="SemiBold"/>
+                    </Border>
+                    <TextBlock Text="已隐藏" FontSize="12" Foreground="{StaticResource AppleTextSecondaryBrush}" VerticalAlignment="Center"/>
+                    <Border Background="{StaticResource AppleWarningBrush}" CornerRadius="10" Padding="8,2" Margin="6,0,12,0">
+                        <TextBlock Text="{Binding HiddenCount}" FontSize="11" Foreground="White" FontWeight="SemiBold"/>
+                    </Border>
+                    <TextBlock Text="收藏" FontSize="12" Foreground="{StaticResource AppleTextSecondaryBrush}" VerticalAlignment="Center"/>
+                    <Border Background="#FFD60A" CornerRadius="10" Padding="8,2" Margin="6,0,0,0">
+                        <TextBlock Text="{Binding FavoriteCount}" FontSize="11" Foreground="#1D1D1F" FontWeight="SemiBold"/>
+                    </Border>
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Content="⭐ 收藏"
+                        Command="{Binding ToggleFavoriteCommand}"
+                        Style="{StaticResource AppleButton}"
+                        Margin="16,0,0,0"
+                        Visibility="{Binding SelectedWindow, Converter={StaticResource NullToVis}}"/>
+            </Grid>
+        </Border>
+
+        <!-- ===== 三栏主内容 ===== -->
+        <Grid Grid.Row="1" Margin="20,16,20,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="180"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== 收藏栏 ===== -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource AppleSurfaceBrush}"
+                    BorderBrush="{StaticResource AppleBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Margin="0,0,6,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Padding="14,12" BorderBrush="{StaticResource AppleBorderBrush}" BorderThickness="0,0,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⭐" FontSize="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="收藏" FontSize="13" FontWeight="SemiBold" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <ListBox Grid.Row="1"
+                             x:Name="FavoriteList"
+                             ItemsSource="{Binding FavoriteView}"
+                             SelectedItem="{Binding SelectedWindow, Mode=TwoWay}"
+                             MouseDoubleClick="FavoriteList_DoubleClick"
+                             Style="{StaticResource AppleListBox}"
+                             Margin="6">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:WindowInfo}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding ProcessName}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="13"/>
+                                        <TextBlock Text="{Binding ShortTitle}"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource AppleTextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxHeight="16"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- ===== 可见窗口栏 ===== -->
+            <Border Grid.Column="1"
+                    Background="{StaticResource AppleSurfaceBrush}"
+                    BorderBrush="{StaticResource AppleBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Margin="6,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Padding="14,12" BorderBrush="{StaticResource AppleBorderBrush}" BorderThickness="0,0,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="●" FontSize="14" Foreground="{StaticResource AppleSuccessBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="可见窗口" FontSize="13" FontWeight="SemiBold" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <ListBox Grid.Row="1"
+                             x:Name="VisibleList"
+                             ItemsSource="{Binding VisibleView}"
+                             SelectedItem="{Binding SelectedWindow, Mode=TwoWay}"
+                             Style="{StaticResource AppleListBox}"
+                             Margin="6">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:WindowInfo}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding ProcessName}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="13"/>
+                                            <TextBlock Text=" ⭐"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding ShortTitle}"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource AppleTextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxHeight="16"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="隐藏"
+                                            Command="{Binding DataContext.HideCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Style="{StaticResource AppleDangerButton}"
+                                            Padding="8,2"
+                                            FontSize="11"
+                                            Margin="4,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Click="HideButton_Click"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- ===== 已隐藏窗口栏 ===== -->
+            <Border Grid.Column="2"
+                    Background="{StaticResource AppleSurfaceBrush}"
+                    BorderBrush="{StaticResource AppleBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Margin="6,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Padding="14,12" BorderBrush="{StaticResource AppleBorderBrush}" BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                <TextBlock Text="●" FontSize="14" Foreground="{StaticResource AppleWarningBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="已隐藏" FontSize="13" FontWeight="SemiBold" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Content="全部显示"
+                                    Command="{Binding ShowAllCommand}"
+                                    Style="{StaticResource AppleButton}"
+                                    Padding="8,2"
+                                    FontSize="11"/>
+                        </Grid>
+                    </Border>
+
+                    <ListBox Grid.Row="1"
+                             x:Name="HiddenList"
+                             ItemsSource="{Binding HiddenView}"
+                             SelectedItem="{Binding SelectedWindow, Mode=TwoWay}"
+                             Style="{StaticResource AppleListBox}"
+                             Margin="6">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:WindowInfo}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding ProcessName}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="13"
+                                                       Foreground="{StaticResource AppleTextSecondaryBrush}"/>
+                                            <TextBlock Text=" ⭐"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center"
+                                                       Opacity="0.6">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding ShortTitle}"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource AppleTextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxHeight="16"
+                                                   Margin="0,2,0,0"
+                                                   Opacity="0.7"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="显示"
+                                            Command="{Binding DataContext.ShowCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Style="{StaticResource ApplePrimaryButton}"
+                                            Padding="8,2"
+                                            FontSize="11"
+                                            Margin="4,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Click="ShowButton_Click"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ===== 底部状态栏 ===== -->
+        <Border Grid.Row="2"
+                Background="{StaticResource AppleSurfaceBrush}"
+                BorderBrush="{StaticResource AppleBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,8">
+            <TextBlock Text="{Binding StatusText}"
+                       FontSize="11"
+                       Foreground="{StaticResource AppleTextSecondaryBrush}"/>
+        </Border>
+    </Grid>
+</Window>
